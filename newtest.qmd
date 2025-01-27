@@ -1,6 +1,6 @@
 ---
 title: "Modeling in Regression Lab: Module 1"
-author: "Gayatri"
+author: "Yashwanth Krishna"
 format: 
   html:
     self-contained: true
