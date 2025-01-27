@@ -1,0 +1,617 @@
+---
+title: "Modeling in Regression Lab: Module 1"
+author: "Gayatri"
+format: 
+  html:
+    self-contained: true
+    message: false
+    warning: false
+    error: true
+    code-overflow: wrap
+    code-annotations: hover
+execute:
+  echo: true
+editor: source
+---
+
+Throughout the course, we will be using the [Board Game Geek dataset from Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/master/data/2022/2022-01-25).
+
+```{r}
+# do not edit this block
+library(tidyverse) 
+
+ratings <- 
+  read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-25/ratings.csv') %>% 
+  select(-num) 
+
+details <- 
+  read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-25/details.csv') %>% 
+  select(-num) 
+
+bgg <- full_join(ratings, details, by = "id") %>% 
+  drop_na(average, yearpublished, minage) 
+```
+
+<u>Tuesday, August 20: Introduction to R and Quarto</u>
+
+**1. How many total observations (rows) are there in the dataset?**
+
+There are 21631 observations(rows) are there in the dataset(bgg).
+
+**2. List the first 5 variables (columns) in the dataset.**
+
+id, name, year, rank, average, these are the 5 variables(columns) in the dataset(bgg).
+
+<u>Thursday, August 22: Review of Statistical Modeling</u>
+
+**3. We will be working with the average user rating (*average*), year the game was published (*yearpublished*), and the minimum age suggested to play the game (*minage*), and the. Explore each of these variables: provide the mean with standard deviation, median with IQR, and a histogram to determine the shape of the distribution.**
+
+```{r}
+
+bgg %>%
+  summarize(mean_average=round(mean(average, na.rm =TRUE),2),
+            sd_average=round(sd(average, na.rm =TRUE),2),
+            median_average=round(median(average, na.rm = TRUE),2),
+            IQR_average=round(IQR(average, na.rm =TRUE),2))
+hist(bgg$average)
+
+bgg%>%
+  summarize(mean_yearpublished=round(mean(yearpublished, na.rm =TRUE),2),
+            sd_yearpublished=round(sd(yearpublished, na.rm =TRUE),2),
+            median_yearpublished=round(median(yearpublished, na.rm = TRUE),2),
+            IQR_yearpublished=round(IQR(yearpublished, na.rm =TRUE),2))
+hist(bgg$yearpublished)
+
+bgg%>%
+  summarize(mean_minage=round(mean(minage, na.rm =TRUE),2),
+            sd_minage=round(sd(minage, na.rm =TRUE),2),
+            median_minage=round(median(minage, na.rm = TRUE),2),
+            IQR_minage=round(IQR(minage, na.rm =TRUE),2))
+hist(bgg$minage)
+
+
+
+
+
+
+
+  
+```
+
+**4. Model the average user rating (*average*) as a function of year published (*yearpublished*) and minimum age (*minage*). Remember to state (typeset) the resulting model.**
+
+```{r}
+m1 <- glm(average ~ yearpublished + minage,
+          data = bgg,
+          family = "gaussian")
+summary(m1)
+
+coefficients(m1)
+```
+
+Thus, the resulting model is $$ 
+\hat{y}=5.4187+0.0002x_1+0.0473x_2
+$$ where,
+
+$y$ is the average,
+
+$x_1$ is the yearpublished, and
+
+$x_2$ is the minage.
+
+```{r}
+full <- glm(average ~ yearpublished + minage, data = bgg, family = "gaussian")
+reduced <- glm(average ~ 1, data = bgg, family = "gaussian")
+anova(reduced, full, test = "F")
+```
+
+**5. Let's scale the predictors -- note that in your model, you should see very small coefficients, which does not make for a meaningful interpretation. Perform the appropriate data management steps to scale the year published by 25 years and to scale the minimum age by 5 years.**
+
+```{r}
+bgg$yearpublished_scaled <- bgg$yearpublished/25
+bgg$minage_scaled <- bgg$minage/5
+
+```
+
+**6. Reconstruct your model from Q4 using the scaled predictors from Q5. Remember to state (typeset) the resulting model.**
+
+```{r}
+m2 <- glm(average ~ yearpublished_scaled + minage_scaled,
+          data = bgg,
+          family = "gaussian")
+summary(m2)
+coefficients(m2)
+```
+
+Thus, the resulting model is $$ 
+\hat{y}=5.418+0.006x_1+0.236x_2
+$$ where,
+
+$y$ is the average,
+
+$x_1$ is the yearpublished_scaled, and
+
+$x_2$ is the minage_scaled.
+
+```{r}
+full_scaled <- glm(average ~ yearpublished_scaled + minage_scaled, data = bgg, family = "gaussian")
+reduced_scaled <- glm(average ~ 1, data = bgg, family = "gaussian")
+anova(reduced_scaled, full_scaled, test = "F")
+```
+
+**7. Let's compare the model results from Q4 and Q6.**
+
+-   **What do you notice when you compare the** $\hat{\beta}_i$ values?
+
+    -   I have observed the change of values after scaling the predictors. Results of Q6 have small coefficients compared to Q4.
+    -   In Q4, $\hat{\beta}_{yearpublished}$=0.0002, $\hat{\beta}_{minage}$=0.0473
+    -   In Q6, $\hat{\beta}_{yearpublished_scaled}$=0.006, $\hat{\beta}_{minage_scaled}$=0.236
+
+-   **What do you notice when you compare the test statistics and** $p$-values?
+
+    -   The test statistics and p-values are same in both the cases.
+    -   $F_o$=454.42 and p\<0.001
+
+**8. Is the model in Q6 significant at the** $\alpha$ = 0.05 level? You must typeset the results of your hypothesis test.
+
+```{r}
+full_scaled <- glm(average ~ yearpublished_scaled + minage_scaled, data = bgg, family = "gaussian")
+reduced_scaled <- glm(average ~ 1, data = bgg, family = "gaussian")
+anova(reduced_scaled, full_scaled, test = "F")
+
+summary(m2)
+```
+
+-   **Hypotheses**
+
+    -   $H_0$: model in Q6 is not significant.
+    -   $H_1$: model in Q6 is significant.
+
+-   **Test Statistic and** $p$-Value
+
+    -   $F_{0}=454.42$
+    -   $p<0.001$
+
+-   **Rejection Region**
+
+    -   Reject $H_0$ if $p < \alpha$; $\alpha =0.05$.
+
+-   **Conclusion and Interpretation**
+
+    -   Reject $H_0$.
+
+    -   As the p\<0.05, There is sufficient evidence to suggest that the model is significant .
+
+**9. Are there any significant predictors of average rating at the** $\alpha$ = 0.05 level? You must typeset the results of your hypothesis tests.
+
+```{r}
+summary(m2)
+```
+
+***Test for publishing year***
+
+-   **Hypotheses**
+
+    -   $H_0$: It is not a significant predictor of average
+    -   $H_1$: It is a significant predictor of average
+
+-   **Test Statistic and** $p$-Value
+
+-   t-value=9.247
+
+-   p-value\<2e-16
+
+-   **Rejection Region**
+
+    -   Reject $H_0$ if $p < \alpha$; $\alpha =0.05$.
+
+-   **Conclusion and Interpretation**
+
+    -   Reject $H_0$.
+
+    -   As the p-value \< $\alpha$There is sufficient evidence to suggest that yearpublished is a significant predictor of average.
+
+***Test for minimum age***
+
+-   **Hypotheses**
+
+    -   $H_0$: It is not a significant predictor of average
+    -   $H_1$: It is a significant predictor of average
+
+-   **Test Statistic and** $p$-Value
+
+    -   t-value=27.709
+    -   p-value \<2e-16
+
+-   **Rejection Region**
+
+    -   Reject $H_0$ if $p < \alpha$; $\alpha =0.05$.
+
+-   **Conclusion and Interpretation**
+
+    -   Reject $H_0$.
+
+    -   As the p-value \< $\alpha$There is sufficient evidence to suggest that minage is a significant predictor of average.
+
+<u>Tuesday, August 27: Introduction of Categorical Predictors</u>
+
+**10. Let's explore the player variables a little more.**
+
+-   **What are the possible responses in the minimum number of players?**
+
+```{r}
+head(bgg, n=5)
+bgg %>% count(minplayers)
+
+library(fastDummies)
+bgg <- bgg %>% 
+  dummy_cols(select_columns = c("minplayers")) 
+
+bgg %>%
+  select(starts_with("minplayers")) %>%
+  head(3)
+
+
+```
+
+-   **What are the possible responses in the maximum number of players?**
+
+```{r}
+head(bgg, n=5)
+bgg %>% count(maxplayers)
+
+library(fastDummies)
+bgg <- bgg %>% 
+  dummy_cols(select_columns = c("maxplayers")) 
+
+bgg %>%
+  select(starts_with("maxplayers")) %>%
+  head(3)
+
+
+```
+
+**11. Let's treat minimum and maximum number of players as categorical variables, however, they have too many categories for reasonable interpretation. Perform the appropriate data management steps to create the following variables:**
+
+-   **an indicator for games that require 2 players**
+
+-   **a character variable classifying games as follows:**
+
+    -   ***minplayers***$\in$ {0, 1} $\to$ "1 - not interested"
+    -   ***minplayers***$\in$ {2, 3} $\to$ "2 - can play with family"
+    -   ***minplayers*** **\> 3** $\to$ "3 - can play with friends"
+
+```{r}
+library(fastDummies)
+bgg <- bgg %>%
+  mutate(games = ifelse(minplayers == 2, 1, 0)) %>%
+  mutate(games_classification = case_when(
+    minplayers %in% c(0,1) ~ "1 - not interested",
+    minplayers %in% c(2, 3) ~ "2 - can play with family",
+    minplayers > 3 ~ "3 - can play with friends"))
+
+bgg %>%
+  select(minplayers, games, games_classification) %>%
+  head(n = 100)
+
+```
+
+**12. Model the average user rating (*average*) as a function of games that require 2 players (variable from Q11) and scaled minimum age (variable from Q5). Remember to state (typeset) the resulting model.**
+
+```{r}
+m3 <- glm(average ~ games + minage_scaled,
+          data = bgg,
+          family = "gaussian")
+summary(m3)
+coefficients(m3)
+```
+
+Thus, the resulting model is $$  \hat{y}=6.15-0.24x_1+0.23x_2 $$ where,
+
+$y$ is the average,
+
+$x_1$ is the games, and
+
+$x_2$ is the minage_scaled.
+
+**13. Are there any significant predictors of average rating at the** $\alpha$ = 0.05 level? You must typeset the results of your hypothesis tests.
+
+```{r}
+car::Anova(m3, type = 3)
+
+summary(m3)
+```
+
+***Test for minimum of 2 players***
+
+-   **Hypotheses**
+
+    -   $H_0$: It is no significant predictor of average
+    -   $H_1$: It is a significant predictor of average
+
+-   **Test Statistic and** $p$-Value
+
+    -   $t_0$= -18.33
+    -   $p$\<0.001
+
+-   **Rejection Region**
+
+    -   Reject $H_0$ if $p < \alpha$; $\alpha =0.05$.
+
+-   **Conclusion and Interpretation**
+
+    -   Reject $H_0$.
+
+    -   As the p-value\< alpha, there is sufficient evidence to suggest that games with minimum of 2 players is a significant predictor of average.
+
+***Test for minimum age***
+
+-   **Hypotheses**
+
+    -   $H_0$: It is not a significant predictor of average
+    -   $H_1$: It is a significant predictor of average
+
+-   **Test Statistic and** $p$-Value
+
+    -   $t_{0}$=26.75
+    -   $p$\<0.001
+
+-   **Rejection Region**
+
+    -   Reject $H_0$ if $p < \alpha$; $\alpha =0.05$.
+
+-   **Conclusion and Interpretation**
+
+    -   Reject $H_0$.
+
+    -   As the p-value\< alpha, there is sufficient evidence to suggest that minimum age is a significant predictor of average.
+
+**14. Provide brief interpretations of the regression slopes.**
+
+-   Answer here
+
+-   Answer here
+
+**15. Model the average user rating (*average*) as a function of games classification (variable from Q11) and scaled minimum age (variable from Q5). Remember to state (typeset) the resulting model.**
+
+```{r}
+m4 <- glm(average ~ games_classification + minage_scaled,
+          data = bgg,
+          family = "gaussian")
+summary(m4)
+coefficients(m4)
+```
+
+Thus, the resulting model is $$  \hat{y}=6.45-0.57x_1-0.67x_2+0.23x_3 $$ where,
+
+$y$ is the average,
+
+$x_1$ is the games for minplayers $\in${2,3}
+
+$x_2$ is the games for minplayers \>3, and
+
+$x_3$ is the minage_scaled.
+
+**16. Are there any significant predictors of average rating at the** $\alpha$ = 0.05 level? You must typeset the results of your hypothesis tests.
+
+```{r}
+car::Anova(m4, type = 3)
+
+summary(m4)
+```
+
+***Test for game classification***
+
+-   **Hypotheses**
+
+    -   $H_0$: $\beta_1=\beta_2=\beta_3=0$
+    -   $H_1$: Atleast one $\beta_i$ is not equal to 0
+
+-   **Test Statistic and** $p$-Value
+
+    -   t1=-35.41, t2=-17.36
+    -   p\<0.001
+
+-   **Rejection Region**
+
+    -   Reject $H_0$ if $p < \alpha$; $\alpha =0.05$.
+
+-   **Conclusion and Interpretation**
+
+    -   reject H0
+    -   as the p-value\<alpha, there is enough evidence to suggest that atleast one slope is not equal to zero,therefore the game classification is a significant predictor for average.
+
+```{r}
+car::Anova(m4, type = 3)
+
+summary(m4)
+```
+
+***Test for minimum age***
+
+-   **Hypotheses**
+
+    -   $H_0$: It is not a significant predictor of average
+    -   $H_1$: It is a significant predictor of average
+
+-   **Test Statistic and** $p$-Value
+
+    -   t-value=27.52
+    -   p\<0.001
+
+-   **Rejection Region**
+
+    -   Reject $H_0$ if $p < \alpha$; $\alpha =0.05$.
+
+-   **Conclusion and Interpretation**
+
+    -   reject H0
+    -   as the p-value\<alpha, there is enough evidence to suggest that the minimum age is a significant predictor for average.
+
+**17. Provide brief interpretations of the regression slopes.**
+
+-   Answer
+
+-   Answer
+
+-   Answer
+
+<u>Thursday, August 29: Introduction of Interaction Terms</u>
+
+**18. Model the average user rating (*average*) as a function of games classification (variable from Q11), scaled minimum age (variable from Q5), and the interaction between the two. Remember to state (typeset) the resulting model.**
+
+```{r}
+
+```
+
+**19. Is the interaction between game classification and the minimum age significant at the** $\alpha$ = 0.05 level? You must typeset the results of your hypothesis tests.
+
+```{r}
+
+```
+
+-   **Hypotheses**
+
+    -   $H_0$:
+    -   $H_1$:
+
+-   **Test Statistic and** $p$-Value
+
+    -   (insert test statistic here, e.g., $t_0$ = 2.41)
+    -   (insert p-value here, e.g., $p < 0.001$ or $p$ = 0.719)
+
+-   **Rejection Region**
+
+    -   Reject $H_0$ if $p < \alpha$; $\alpha =$.
+
+-   **Conclusion and Interpretation**
+
+    -   (Reject or Fail to reject) $H_0$.
+
+    -   There (is or is not) sufficient evidence to suggest that (alternative hypothesis in words).
+
+**20. Plug in the appropriate values to create separate models for each level of game categorization.**
+
+Model for solo games:
+
+Model for games that play at 2 or 3:
+
+Model for games that play at 3 or more:
+
+**21. Provide brief interpretations for the models in Q20.**
+
+Solo games: (state model here)
+
+-   Answer here
+
+-   Answer here
+
+Games that play at 2 or 3: (model here)
+
+-   Answer here
+
+-   Answer here
+
+Model for games that play at 3 or more: (model here)
+
+-   Answer here
+
+-   Answer here
+
+**22. Construct a data visualization to allow us to visualize the regression lines found in Q20. Age (scaled by 5 years) should be on the** $x$-axis, average rating should be on the $y$-axis, and lines should be shown for the models in Q20.
+
+```{r}
+
+```
+
+<u>Tuesday, September 10: Assumptions and Diagnostics of Linear Regression</u>
+
+**23. State the assumptions we assess for linear models under the normal distribution.**
+
+-   Answer here.
+
+**24. Graphically assess the assumptions of the linear model.**
+
+```{r}
+
+```
+
+**25. How many potential outliers exist?**
+
+```{r}
+
+```
+
+**26. How many influential/leverage points exist?**
+
+```{r}
+
+```
+
+**27. Determine if multicollinearity exists in this model.**
+
+```{r}
+
+```
+
+<u>Tuesday, September 17: Gamma Regression</u>
+
+**28. Using gamma regression, model the average user rating (*average*) as a function of games classification (variable from Q11), scaled minimum age (variable from Q5), and the interaction between the two. Remember to state (typeset) the resulting model.**
+
+```{r}
+
+```
+
+**29. Is the interaction between game classification and the minimum age significant at the** $\alpha$ = 0.05 level? You must typeset the results of your hypothesis tests.
+
+```{r}
+
+```
+
+-   **Hypotheses**
+
+    -   $H_0$:
+    -   $H_1$:
+
+-   **Test Statistic and** $p$-Value
+
+    -   (insert test statistic here, e.g., $t_0$ = 2.41)
+    -   (insert p-value here, e.g., $p < 0.001$ or $p$ = 0.719)
+
+-   **Rejection Region**
+
+    -   Reject $H_0$ if $p < \alpha$; $\alpha =$.
+
+-   **Conclusion and Interpretation**
+
+    -   (Reject or Fail to reject) $H_0$.
+
+    -   There (is or is not) sufficient evidence to suggest that (alternative hypothesis in words).
+
+**30. Plug in the appropriate values to create separate models for each level of game categorization.**
+
+Model for solo games:
+
+Model for games that play at 2 or 3:
+
+Model for games that play at more than 3:
+
+**31. Provide brief interpretations for the slopes in Q30.**
+
+Solo games: (model here)
+
+-   Answer
+
+Games that play at 2 or 3: (model here)
+
+-   Answer
+
+Model for games that play at 3 or more: (model here)
+
+-   Answer
+
+**32. Construct a data visualization to allow us to visualize the regression lines found in Q30. Age (scaled by 5 years) should be on the** $x$-axis, average rating should be on the $y$-axis, and lines should be shown for the models in Q30.
+
+```{r}
+
+```
