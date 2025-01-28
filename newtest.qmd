@@ -14,7 +14,12 @@ execute:
 editor: source
 ---
 
-Throughout the course, we will be using the [Board Game Geek dataset from Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/master/data/2022/2022-01-25).
+**Throughout the course, we will be using the [Board Game Geek dataset from Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/master/data/2022/2022-01-25).**
+
+$$\phi(Z)={1-1/d} \sum^d_{i=1} s^{2}_{f_i}/ k.d(1-k/d)$$
+$$ \phi(W)={1-1/d} \sum^d_{i=1} \sigma^{2}_{w_i}/ |\mu_{w_i}|$$
+$$ F=1/|X'| \sum_{x'\epsilon X'} |Y(x)-Y(x')|/Y(x) $$
+
 
 ```{r}
 # do not edit this block
